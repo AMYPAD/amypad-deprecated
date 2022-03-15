@@ -1,0 +1,45 @@
+name: Test
+on: [push, pull_request]
+jobs:
+  check:
+    if: github.event_name != 'pull_request' || github.repository_owner != 'AMYPAD'
+    name: py${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: [3.6, 3.9]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python }}
+    - run: pip install -U .
+  deploy:
+    needs: [check]
+    name: PyPI Deploy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+    - id: dist
+      uses: casperdcl/deploy-pypi@v2
+      with:
+        build: true
+        password: ${{ secrets.PYPI_TOKEN }}
+        upload: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags') }}
+    - id: meta
+      name: Changelog
+      run: |
+        echo ::set-output name=tag::${GITHUB_REF#refs/tags/}
+        git log --pretty='format:%d%n- %s%n%b---' $(git tag --sort=v:refname | tail -n2 | head -n1)..HEAD > _CHANGES.md
+    - if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      with:
+        name: amypad ${{ steps.meta.outputs.tag }} alias
+        body_path: _CHANGES.md
+        draft: true
+        files: |
+          dist/${{ steps.dist.outputs.whl }}
+          dist/${{ steps.dist.outputs.tar.gz }}
