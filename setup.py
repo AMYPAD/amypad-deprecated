@@ -9,7 +9,7 @@ with io_open(fndoc, mode='r', encoding='utf-8') as fd:
     README_rst = fd.read()
 setup(
     name='amypad',
-    version='2.0.0',
+    version='2.0.1',
     description='Alias for amypet',
     long_description=README_rst,
     long_description_content_type='text/x-rst',
