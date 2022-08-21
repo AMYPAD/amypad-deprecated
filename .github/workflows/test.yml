@@ -2,7 +2,7 @@ name: Test
 on: [push, pull_request]
 jobs:
   check:
-    if: github.event_name != 'pull_request' || github.repository_owner != 'AMYPAD'
+    if: github.event_name != 'pull_request' || !contains('OWNER,MEMBER,COLLABORATOR', github.event.pull_request.author_association)
     name: py${{ matrix.python }}
     runs-on: ubuntu-latest
     strategy:
